@@ -141,10 +141,39 @@ void permute(apontAgen agendamento, int l, int r)
     }
 }
 
+apontTrans ultimaEscrita(apontAgen agendamento){
+    //retorna uma lista com as ultimas escritas de cada atributo
+    apontTrans historico = (apontTrans) malloc(sizeof(struct Transactions));
+    historico->next = NULL;//cabeça
+    historico->attri = -1;
+    historico->id = -1;
+    int atualizou=0;
 
-// int visaoEquiv(apontAgen agendamento){
-//     agendamento->vetTransacao[0].
-// }
+
+    for(apontTrans transacao = agendamento->vetTransacao[0]; transacao!=NULL; transacao=transacao->next){
+        if(transacao->op == 'W'){//escrita encontrada
+            // necessario checar se ja existe escrita no mesmo atributo
+            for(apontTrans aux=historico; aux!=NULL; aux=aux->next){
+                if(aux->attri == transacao->attri){
+                    aux->id = transacao->id;//atualiza id
+                    atualizou = 1;
+                }
+            }
+            if(!atualizou){//se não foi encontrada escrita anterior
+                apontTrans aux2 = historico;
+                while(aux2->next != NULL)
+                    aux2 = aux2->next;//pega final do historico
+                aux2->next = (apontTrans) malloc(sizeof(struct Transactions));
+                aux2->next->attri = transacao->attri;
+                aux2->next->id = transacao->id;
+                aux2->next->next = NULL;
+            }
+            atualizou=0;
+        }
+    }
+    return historico;
+
+}
 
 
 int main(){
@@ -197,6 +226,11 @@ int main(){
     }
     // testSeriab(agendamento);
     // permute(agendamento, 0, agendamento->tam-1);
+    apontTrans historico = ultimaEscrita(agendamento2);
+    for(apontTrans j=historico; j!=NULL; j=j->next)
+        printf(".%d %c. ", j->id, j->attri);
+    printf("\n");
+    
 
 
 
