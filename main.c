@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 #include "graph.h" 
 #include "stack.h"
 
@@ -56,9 +57,26 @@ void criaTransacao(apontAgen agendamento, int time, int id, char op, char attri)
         agendamento->vetTransacao[agendamento->tam] = transacao;
         agendamento->tam++;
     }
-    
+}
 
-
+void appendTransacao(apontAgen agendamento, int time, int id, char op, char attri){
+    apontTrans transacao = (apontTrans) malloc(sizeof(struct Transactions));
+    transacao->attri = attri;
+    transacao->op = op;
+    transacao->id = id;
+    transacao->time = time;
+    transacao->next = NULL;
+    if(agendamento->tam==0){
+        agendamento->vetTransacao = (apontTrans *) malloc(sizeof(apontTrans));//aumenta vetor
+        agendamento->tam++;
+    }
+    apontTrans aux = agendamento->vetTransacao[0];
+    if(aux == NULL) agendamento->vetTransacao[0] = transacao;
+    else{
+        while(aux->next != NULL)
+            aux = aux->next;
+        aux->next = (apontTrans) transacao;
+    }
 }
 
 void testSeriab(apontAgen agendamento){
@@ -86,6 +104,47 @@ void testSeriab(apontAgen agendamento){
         }
     }
 }
+/* Function to swap values at two pointers */
+void swap(apontAgen agendamento, int i, int j)
+{
+    apontTrans aux = agendamento->vetTransacao[i];
+    agendamento->vetTransacao[i] = agendamento->vetTransacao[j];
+    agendamento->vetTransacao[j] = aux;
+}
+ 
+/* Function to print permutations of string
+This function takes three parameters:
+1. String
+2. Starting index of the string
+3. Ending index of the string. */
+int global=0;
+void permute(apontAgen agendamento, int l, int r)
+{
+    int i;
+    if (l == r){
+        printf("agendamento:\n");
+        global++;
+        for(int i=0; i<agendamento->tam; i++){
+            for(apontTrans j=agendamento->vetTransacao[i]; j!=NULL; j=j->next)
+                printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
+            printf("\n");
+        }
+    }
+    else
+    {
+        for (i = l; i <= r; i++)
+        {
+            swap(agendamento, l, i);
+            permute(agendamento, l+1, r);
+            swap(agendamento, l, i);
+        }
+    }
+}
+
+
+// int visaoEquiv(apontAgen agendamento){
+//     agendamento->vetTransacao[0].
+// }
 
 
 int main(){
@@ -102,6 +161,7 @@ int main(){
 
     
     apontAgen agendamento = criaAgendamento();
+    apontAgen agendamento2 = criaAgendamento();
     int commits=0;
     while(1){
         int time;
@@ -120,6 +180,7 @@ int main(){
         }
         else{
                 criaTransacao(agendamento, time, id, op, attri);
+                appendTransacao(agendamento2, time, id, op, attri);
         }
  
     }
@@ -129,5 +190,15 @@ int main(){
             printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
         printf("\n");
     }
-    testSeriab(agendamento);
+    for(int i=0; i<agendamento2->tam; i++){
+        for(apontTrans j=agendamento2->vetTransacao[i]; j!=NULL; j=j->next)
+            printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
+        printf("\n");
+    }
+    // testSeriab(agendamento);
+    // permute(agendamento, 0, agendamento->tam-1);
+
+
+
+    return 0;
 }
