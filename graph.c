@@ -30,6 +30,13 @@ Graph GRAPHinit( int V) {
 /* REPRESENTAÇÃO POR LISTAS DE ADJACÊNCIA: A função GRAPHinsertArc() insere um arco v-w no grafo G. A função supõe que v e w são distintos, positivos e menores que G->V. Se o grafo já tem um arco v-w, a função não faz nada. */
 
 void GRAPHinsertArc( Graph G, int v, int w) {
+   //******Verificação de aresta repetida
+   link checa = G->vertices[v]->adj;
+   for(link checa = G->vertices[v]->adj; checa!=NULL; checa=checa->next)
+      if(checa->w->number == w)//já foi criada essa aresta
+         return;
+      
+   //*************
    link aux = G->vertices[v]->adj;
    link newNodo = (link)malloc(sizeof(struct node));
    newNodo->w = G->vertices[w];

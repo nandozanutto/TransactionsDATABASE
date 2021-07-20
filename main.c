@@ -79,7 +79,7 @@ void appendTransacao(apontAgen agendamento, int time, int id, char op, char attr
     }
 }
 
-void testSeriab(apontAgen agendamento){
+void testSeriab(apontAgen agendamento, Graph grafo){
     for(int j=0; j<agendamento->tam; j++){
         for(apontTrans transacaoTj=agendamento->vetTransacao[j]; transacaoTj!=NULL; transacaoTj=transacaoTj->next){
             if(transacaoTj->op == 'R'){
@@ -87,7 +87,8 @@ void testSeriab(apontAgen agendamento){
                     if(i==j) continue;//se Ti está comparando com Ti
                     for(apontTrans transacaoTi=agendamento->vetTransacao[i]; transacaoTi!=NULL; transacaoTi=transacaoTi->next){
                         if((transacaoTi->op=='W') && (transacaoTj->attri==transacaoTi->attri) && (transacaoTj->time>transacaoTi->time))
-                            printf("Aresta R,W em %d -> %d\n", transacaoTi->id, transacaoTj->id);
+                            // printf("Aresta R,W em %d(%d) -> %d(%d)\n", transacaoTi->id, i,  transacaoTj->id, j);
+                            GRAPHinsertArc(grafo, i, j);
                     }
                 }
             }else if(transacaoTj->op == 'W'){
@@ -95,9 +96,11 @@ void testSeriab(apontAgen agendamento){
                     if(i==j) continue;//se Ti está comparando com Ti
                     for(apontTrans transacaoTi=agendamento->vetTransacao[i]; transacaoTi!=NULL; transacaoTi=transacaoTi->next){
                         if((transacaoTi->op=='R') && (transacaoTj->attri==transacaoTi->attri) && (transacaoTj->time>transacaoTi->time))
-                            printf("Aresta W,R em %d -> %d\n", transacaoTi->id, transacaoTj->id);
+                            // printf("Aresta R,W em %d(%d) -> %d(%d)\n", transacaoTi->id, i,  transacaoTj->id, j);
+                            GRAPHinsertArc(grafo, i, j);
                         if((transacaoTi->op=='W') && (transacaoTj->attri==transacaoTi->attri) && (transacaoTj->time>transacaoTi->time))
-                            printf("Aresta W,W em %d -> %d\n", transacaoTi->id, transacaoTj->id);
+                            // printf("Aresta R,W em %d(%d) -> %d(%d)\n", transacaoTi->id, i,  transacaoTj->id, j);
+                            GRAPHinsertArc(grafo, i, j);
                     }
                 }
             }
@@ -209,7 +212,7 @@ int main(){
         }
         else{
                 criaTransacao(agendamento, time, id, op, attri);
-                appendTransacao(agendamento2, time, id, op, attri);
+                // appendTransacao(agendamento2, time, id, op, attri);
         }
  
     }
@@ -219,20 +222,23 @@ int main(){
             printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
         printf("\n");
     }
-    for(int i=0; i<agendamento2->tam; i++){
-        for(apontTrans j=agendamento2->vetTransacao[i]; j!=NULL; j=j->next)
-            printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
-        printf("\n");
-    }
-    // testSeriab(agendamento);
+    // for(int i=0; i<agendamento2->tam; i++){
+    //     for(apontTrans j=agendamento2->vetTransacao[i]; j!=NULL; j=j->next)
+    //         printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
+    //     printf("\n");
+    // }
+    Graph grafo;
+    grafo = GRAPHinit(agendamento->tam);
+    testSeriab(agendamento, grafo);
     // permute(agendamento, 0, agendamento->tam-1);
-    apontTrans historico = ultimaEscrita(agendamento2);
-    for(apontTrans j=historico; j!=NULL; j=j->next)
-        printf(".%d %c. ", j->id, j->attri);
-    printf("\n");
+    // apontTrans historico = ultimaEscrita(agendamento2);
+    // for(apontTrans j=historico; j!=NULL; j=j->next)
+    //     printf(".%d %c. ", j->id, j->attri);
+    // printf("\n");
     
-
-
+    printGraph(grafo);
+    envelopeBusca(grafo);
+    printf("%d\n", temCiclo(grafo));
 
     return 0;
 }
