@@ -235,50 +235,42 @@ This function takes three parameters:
 1. String
 2. Starting index of the string
 3. Ending index of the string. */
-int global=0;
-void permute(apontAgen agendamento, int l, int r, apontAgen agenSerial)
+int globalVisao=0;
+void visaoEquiv(apontAgen agendamento, int l, int r, apontAgen agenSerial)
 {
+    if(globalVisao == 1)
+        return;
     int i;
     if (l == r){
-        global++;
         apontAgen newAgen = transforma(agendamento);
         apontTrans historico = ultimaEscrita(agenSerial);
         apontTrans historicoTeste = ultimaEscrita(newAgen);
 
         apontDepen dependencia = leituraEscrita(agenSerial);
         apontDepen dependenciaTeste = leituraEscrita(newAgen);
+        if(comparaHistory(historico, historicoTeste) && comparaDependencia(dependencia, dependenciaTeste)){
+            globalVisao = 1;//achou uma visão serial equivalente
+            return;
+        }
+            
+        // printf("ultima escrita: %d\n", comparaHistory(historico, historicoTeste));
+        // printf("dependencia: %d\n", comparaDependencia(dependencia, dependenciaTeste));
 
-        printf("ultima escrita: %d\n", comparaHistory(historico, historicoTeste));
-        printf("dependencia: %d\n", comparaDependencia(dependencia, dependenciaTeste));
-        // for(int i=0; i<newAgen->tam; i++){
-        //     for(apontTrans j=newAgen->vetTransacao[i]; j!=NULL; j=j->next)
-        //         printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
-        //     printf("\n");
-        // }
     }
     else
     {
         for (i = l; i <= r; i++)
         {
             swap(agendamento, l, i);
-            permute(agendamento, l+1, r, agenSerial);
+            visaoEquiv(agendamento, l+1, r, agenSerial);
             swap(agendamento, l, i);
         }
     }
 }
-int main(){
 
-    // apontAgen agendamento = criaAgendamento();
-    // criaTransacao(agendamento, 1, 1, 'R', 'X');
-    // criaTransacao(agendamento, 2, 2, 'R', 'X');
-    // criaTransacao(agendamento, 3, 3, 'R', 'X');
-    // criaTransacao(agendamento, 4, 1, 'R', 'X');
-    // criaTransacao(agendamento, 5, 1, 'R', 'X');
-    // criaTransacao(agendamento, 6, 3, 'R', 'X');
-    // criaTransacao(agendamento, 7, 2, 'R', 'X');
-
-
-    
+int lerAgendamento(int numAgen){
+    int acabouArquivo=0;
+    int vazio=1;//nao li nada
     apontAgen agendamento = criaAgendamento();
     apontAgen agendamento2 = criaAgendamento();
     int commits=0;
@@ -287,28 +279,27 @@ int main(){
         int id;
         char op;
         char attri;
-        if(scanf("%d", &time) == EOF)//checa se existe nova linha
+        if(scanf("%d", &time) == EOF){//checa se existe nova linha
+            acabouArquivo=1;
             break;
+        }
         scanf("%d %c %c", &id, &op, &attri);
         if(op == 'C'){
             commits++;//commits não são salvos
-            if(commits == agendamento->tam){//supõe que os commits são dados em seq
+            if(commits == agendamento->tam){//se todas as transações abertas foram fechadas
                 commits=0;
                 break;
             }
         }
         else{
+                vazio=0;//alguma transação foi lida
                 criaTransacao(agendamento, time, id, op, attri);
                 appendTransacao(agendamento2, time, id, op, attri);
         }
  
     }
-    apontAgen teste = transforma(agendamento);
-    for(int i=0; i<teste->tam; i++){
-        for(apontTrans j=teste->vetTransacao[i]; j!=NULL; j=j->next)
-            printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
-        printf("\n");
-    }
+    if(vazio)
+        return acabouArquivo;
 
     // for(int i=0; i<agendamento->tam; i++){
     //     for(apontTrans j=agendamento->vetTransacao[i]; j!=NULL; j=j->next)
@@ -321,31 +312,42 @@ int main(){
     //     printf("\n");
     // }
 
-    permute(agendamento, 0, agendamento->tam-1, agendamento2);
-    // apontTrans historico = ultimaEscrita(agendamento2);
-    // apontTrans historicoTeste = ultimaEscrita(agendamento2);
-    // historicoTeste->next->id=2;
+    visaoEquiv(agendamento, 0, agendamento->tam-1, agendamento2);
 
-    // printf("result: %d", comparaHistory(historico, historico));
-    // for(apontTrans j=historico; j!=NULL; j=j->next)
-    //     printf(".%d %c. ", j->id, j->attri);
-    // printf("\n");
-    
-    // apontDepen dependencia = leituraEscrita(agendamento2);
-    // apontDepen dependenciateste = leituraEscrita(agendamento2);
-    // dependenciateste->next->write = -1;
 
-    // for(apontDepen aux = dependencia; aux!=NULL; aux=aux->next){
-    //     printf("%d %d\n", aux->read, aux->write);
-    // }
-    // printf("%d", comparaDependencia(dependencia, dependenciateste));
-
-    // Graph grafo;
-    // grafo = GRAPHinit(agendamento->tam);
-    // testSeriab(agendamento, grafo);
+    Graph grafo;
+    grafo = GRAPHinit(agendamento->tam);
+    testSeriab(agendamento, grafo);
     // printGraph(grafo);
-    // envelopeBusca(grafo);
-    // printf("%d\n", temCiclo(grafo));
+    envelopeBusca(grafo);
 
+
+    //impressão de resultados
+    printf("%d ", numAgen);
+    for(int i=0; i<agendamento->tam; i++){
+        if(i==agendamento->tam-1)
+            printf("%d ", agendamento->vetTransacao[i]->id);
+        else
+            printf("%d,", agendamento->vetTransacao[i]->id);
+    
+    } 
+    if(temCiclo(grafo))
+        printf("NS");
+    else
+        printf("SS");
+    if(globalVisao)
+        printf(" SV\n");
+    else
+        printf(" NV\n");
+    
+    globalVisao=0;
+    return acabouArquivo;
+
+}
+
+int main(){
+    int numAgen=1;
+    while(lerAgendamento(numAgen)!=1)
+        numAgen++;
     return 0;
 }
