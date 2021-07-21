@@ -6,6 +6,7 @@
 
 typedef struct Transactions *apontTrans;
 typedef struct Agendamento *apontAgen;
+typedef struct Dependency *apontDepen;
 
 
 struct Transactions 
@@ -15,6 +16,12 @@ struct Transactions
     char op;
     char attri;
     apontTrans next;//ponteiro para a próx transação Ti
+};
+
+struct Dependency{
+    int read;
+    int write;
+    apontDepen next;
 };
 
 struct Agendamento
@@ -107,42 +114,7 @@ void testSeriab(apontAgen agendamento, Graph grafo){
         }
     }
 }
-/* Function to swap values at two pointers */
-void swap(apontAgen agendamento, int i, int j)
-{
-    apontTrans aux = agendamento->vetTransacao[i];
-    agendamento->vetTransacao[i] = agendamento->vetTransacao[j];
-    agendamento->vetTransacao[j] = aux;
-}
- 
-/* Function to print permutations of string
-This function takes three parameters:
-1. String
-2. Starting index of the string
-3. Ending index of the string. */
-int global=0;
-void permute(apontAgen agendamento, int l, int r)
-{
-    int i;
-    if (l == r){
-        printf("agendamento:\n");
-        global++;
-        for(int i=0; i<agendamento->tam; i++){
-            for(apontTrans j=agendamento->vetTransacao[i]; j!=NULL; j=j->next)
-                printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
-            printf("\n");
-        }
-    }
-    else
-    {
-        for (i = l; i <= r; i++)
-        {
-            swap(agendamento, l, i);
-            permute(agendamento, l+1, r);
-            swap(agendamento, l, i);
-        }
-    }
-}
+
 
 apontTrans ultimaEscrita(apontAgen agendamento){
     //retorna uma lista com as ultimas escritas de cada atributo
@@ -178,7 +150,115 @@ apontTrans ultimaEscrita(apontAgen agendamento){
 
 }
 
+apontDepen leituraEscrita(apontAgen agendamento){
+    //retorna uma lista de r -> w onde r vem antes de w (no mesmo atributo por diferentes transações)
+    apontDepen dependencia = (apontDepen) malloc(sizeof(struct Dependency));
+    dependencia->next = NULL;
+    dependencia->read = -1;
+    dependencia->write = -1;
 
+    for(apontTrans transacao = agendamento->vetTransacao[0]; transacao!=NULL; transacao=transacao->next){
+        if(transacao->op == 'R'){
+            for(apontTrans procuraW = transacao; procuraW != NULL; procuraW = procuraW->next)
+                if((procuraW->op == 'W') && (procuraW->attri==transacao->attri) && (procuraW->id!=transacao->id)){
+                    apontDepen aux = dependencia;
+                    while(aux->next != NULL)
+                        aux = aux->next;//pega final da dependencia
+                    aux->next = (apontDepen)malloc(sizeof(struct Dependency));
+                    aux->next->read = transacao->time;
+                    aux->next->write = procuraW->time;
+                    aux->next->next = NULL;
+                }
+                    
+
+        }
+
+    }
+    return dependencia;
+
+}
+
+int comparaDependencia(apontDepen dependencia1, apontDepen dependencia2){
+    //as dependencias podem estar em ordem diferente
+    int existeDepen = 0;
+    for(apontDepen a=dependencia1; a!=NULL; a=a->next){
+        for(apontDepen b=dependencia2; b!=NULL; b=b->next)
+            if(a->read == b->read && a->write == b->write)
+                existeDepen = 1;
+        if(existeDepen == 0)
+            return 0;//nao encontrou a mesma relação leitura-escrita
+        existeDepen = 0;
+    }
+
+    return 1;
+}
+
+int comparaHistory(apontTrans historico1, apontTrans historico2){
+    int mesmoHistorico = 0;
+    for(apontTrans a=historico1; a!=NULL; a=a->next){
+        for(apontTrans b=historico2; b!=NULL; b=b->next){
+            if(a->attri==b->attri && a->id==b->id)
+                mesmoHistorico=1;
+        }
+        if(mesmoHistorico==0)
+            return 0;//a última escrita de algum atributo nao bateu!
+        mesmoHistorico = 0;
+    }
+
+    return 1;
+}
+
+apontAgen transforma(apontAgen agendamento){
+//esta função muda o agendamento da posição vertical para a horizontal
+    apontAgen newAgendamento = criaAgendamento();
+    for(int i=0; i<agendamento->tam; i++){
+        for(apontTrans j=agendamento->vetTransacao[i]; j!=NULL; j=j->next){       
+            appendTransacao(newAgendamento, j->time, j->id, j->op, j->attri);
+            // printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
+        
+        }
+    }
+
+    return newAgendamento;
+
+}
+/* Function to swap values at two pointers */
+void swap(apontAgen agendamento, int i, int j)
+{
+    apontTrans aux = agendamento->vetTransacao[i];
+    agendamento->vetTransacao[i] = agendamento->vetTransacao[j];
+    agendamento->vetTransacao[j] = aux;
+}
+ 
+/* Function to print permutations of string
+This function takes three parameters:
+1. String
+2. Starting index of the string
+3. Ending index of the string. */
+int global=0;
+void permute(apontAgen agendamento, int l, int r)
+{
+    int i;
+    if (l == r){
+        printf("agendamento:\n");
+        global++;
+        apontAgen newAgen = transforma(agendamento);
+        for(int i=0; i<newAgen->tam; i++){
+            for(apontTrans j=newAgen->vetTransacao[i]; j!=NULL; j=j->next)
+                printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
+            printf("\n");
+        }
+    }
+    else
+    {
+        for (i = l; i <= r; i++)
+        {
+            swap(agendamento, l, i);
+            permute(agendamento, l+1, r);
+            swap(agendamento, l, i);
+        }
+    }
+}
 int main(){
 
     // apontAgen agendamento = criaAgendamento();
@@ -212,33 +292,53 @@ int main(){
         }
         else{
                 criaTransacao(agendamento, time, id, op, attri);
-                // appendTransacao(agendamento2, time, id, op, attri);
+                appendTransacao(agendamento2, time, id, op, attri);
         }
  
     }
-
-    for(int i=0; i<agendamento->tam; i++){
-        for(apontTrans j=agendamento->vetTransacao[i]; j!=NULL; j=j->next)
+    apontAgen teste = transforma(agendamento);
+    for(int i=0; i<teste->tam; i++){
+        for(apontTrans j=teste->vetTransacao[i]; j!=NULL; j=j->next)
             printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
         printf("\n");
     }
+
+    // for(int i=0; i<agendamento->tam; i++){
+    //     for(apontTrans j=agendamento->vetTransacao[i]; j!=NULL; j=j->next)
+    //         printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
+    //     printf("\n");
+    // }
     // for(int i=0; i<agendamento2->tam; i++){
     //     for(apontTrans j=agendamento2->vetTransacao[i]; j!=NULL; j=j->next)
     //         printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
     //     printf("\n");
     // }
-    Graph grafo;
-    grafo = GRAPHinit(agendamento->tam);
-    testSeriab(agendamento, grafo);
-    // permute(agendamento, 0, agendamento->tam-1);
+
+    permute(agendamento, 0, agendamento->tam-1);
     // apontTrans historico = ultimaEscrita(agendamento2);
+    // apontTrans historicoTeste = ultimaEscrita(agendamento2);
+    // historicoTeste->next->id=2;
+
+    // printf("result: %d", comparaHistory(historico, historico));
     // for(apontTrans j=historico; j!=NULL; j=j->next)
     //     printf(".%d %c. ", j->id, j->attri);
     // printf("\n");
     
-    printGraph(grafo);
-    envelopeBusca(grafo);
-    printf("%d\n", temCiclo(grafo));
+    // apontDepen dependencia = leituraEscrita(agendamento2);
+    // apontDepen dependenciateste = leituraEscrita(agendamento2);
+    // dependenciateste->next->write = -1;
+
+    // for(apontDepen aux = dependencia; aux!=NULL; aux=aux->next){
+    //     printf("%d %d\n", aux->read, aux->write);
+    // }
+    // printf("%d", comparaDependencia(dependencia, dependenciateste));
+
+    // Graph grafo;
+    // grafo = GRAPHinit(agendamento->tam);
+    // testSeriab(agendamento, grafo);
+    // printGraph(grafo);
+    // envelopeBusca(grafo);
+    // printf("%d\n", temCiclo(grafo));
 
     return 0;
 }
