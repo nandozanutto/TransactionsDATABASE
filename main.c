@@ -236,25 +236,32 @@ This function takes three parameters:
 2. Starting index of the string
 3. Ending index of the string. */
 int global=0;
-void permute(apontAgen agendamento, int l, int r)
+void permute(apontAgen agendamento, int l, int r, apontAgen agenSerial)
 {
     int i;
     if (l == r){
-        printf("agendamento:\n");
         global++;
         apontAgen newAgen = transforma(agendamento);
-        for(int i=0; i<newAgen->tam; i++){
-            for(apontTrans j=newAgen->vetTransacao[i]; j!=NULL; j=j->next)
-                printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
-            printf("\n");
-        }
+        apontTrans historico = ultimaEscrita(agenSerial);
+        apontTrans historicoTeste = ultimaEscrita(newAgen);
+
+        apontDepen dependencia = leituraEscrita(agenSerial);
+        apontDepen dependenciaTeste = leituraEscrita(newAgen);
+
+        printf("ultima escrita: %d\n", comparaHistory(historico, historicoTeste));
+        printf("dependencia: %d\n", comparaDependencia(dependencia, dependenciaTeste));
+        // for(int i=0; i<newAgen->tam; i++){
+        //     for(apontTrans j=newAgen->vetTransacao[i]; j!=NULL; j=j->next)
+        //         printf(".%d %d %c %c. ", j->time, j->id, j->op, j->attri);
+        //     printf("\n");
+        // }
     }
     else
     {
         for (i = l; i <= r; i++)
         {
             swap(agendamento, l, i);
-            permute(agendamento, l+1, r);
+            permute(agendamento, l+1, r, agenSerial);
             swap(agendamento, l, i);
         }
     }
@@ -314,7 +321,7 @@ int main(){
     //     printf("\n");
     // }
 
-    permute(agendamento, 0, agendamento->tam-1);
+    permute(agendamento, 0, agendamento->tam-1, agendamento2);
     // apontTrans historico = ultimaEscrita(agendamento2);
     // apontTrans historicoTeste = ultimaEscrita(agendamento2);
     // historicoTeste->next->id=2;
