@@ -36,7 +36,7 @@ apontador pop() {
       top = top - 1;   
       return data;
    } else {
-      printf("Could not retrieve data, Stack is empty.\n");
+      printf("pilha vazia\n");
    }
 }
 
@@ -46,6 +46,6 @@ int push(apontador data) {
       top = top + 1;   
       stack[top] = data;
    } else {
-      printf("Could not insert data, Stack is full.\n");
+      printf("pilha cheia\n");
    }
 }
