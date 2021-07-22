@@ -1,5 +1,0 @@
-****Funções para Grafos
-->Representação:
-Os vértices são representados pela estrutura 'vertex'. Cada vértice tem um ponteiro para seu 
-primeiro vizinho de saída, representado pela estrutura 'node'. O vizinho contém um ponteiro para 
-o próximo vizinho de saída, ou seja, se um vértice v
